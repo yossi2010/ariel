@@ -1,0 +1,34 @@
+The simulation is run at 1000Hz at real time 1
+
+void EngineCalculations()
+{
+    ThrottlePedal = ThrottlePedal + deltaSimTime * 5 * (Throttle_command - ThrottlePedal); //move the gas pedal smoothly
+    if (Throttle_command < 0 && Speed > 5)
+      ThrottlePedal = 0;
+    CurrentRPM = fabs(Speed) * GearRatio[CurrentGear] * 3.1 / (WheelRadius * 2 * PI / 60) + IDLE_RPM; //Calculating RPM from average wheel rotation speed. 3.1 being the Final Drive Gear ratio.
+
+    if (CurrentGear < TRANSMISSIONS && Speed * 3.6 > ShiftSpeed[CurrentGear]) //simulating Torque drop in transmission
+    {
+      CurrentGear++;
+      ShiftTime = simTime.Double() + 0.25;
+    }
+    else if (CurrentGear > 1 && Speed * 3.6 < ShiftSpeed[CurrentGear - 1] - 10) //simulating Torque drop in transmission
+    {
+      CurrentGear--;
+      ShiftTime = simTime.Double() + 0.25;
+    }
+
+    // int indexRPM = ((int)CurrentRPM) / 600;
+    double interpolatedEngineTorque = 400 + 0.1620123 * CurrentRPM - 0.00005657748 * CurrentRPM * CurrentRPM; //An extracted function from the TorqueRPM600 array
+    // double interpolatedEngineTorque=(TorqueRPM600[indexRPM]+TorqueRPM600[indexRPM+1]*fmod(CurrentRPM,600)/600)/(1+fmod(CurrentRPM,600)/600); Deprecated interpolation code
+    Torque = ThrottlePedal * interpolatedEngineTorque * GearRatio[CurrentGear] * power;
+    if (simTime < ShiftTime)  //simulating Torque drop in transmission
+      Torque *= 0.5;
+
+}
+
+
+  double ShiftSpeed[TRANSMISSIONS] = {0, 20, 40, 65};
+  double GearRatio[TRANSMISSIONS + 1] = {0, 3.2, 2.5, 1.5, 0.8};
+  double TorqueRPM600[8] = {0, 350, 515, 500, 450, 300, 200, 200};
+  double PowerRPM600[8] = {0, 10, 60, 80, 120, 142, 120, 120};
