@@ -185,7 +185,6 @@ public:
     // if (simTime < ShiftTime)  //simulating Torque drop in transmission
     //   Torque *= 0.5;
     Torque=Throttle_command;
-    EngineLoad = Torque;
     // std::cout << CurrentRPM << " RPM at Gear " << CurrentGear << " Speed " << Speed * 3.6 << " Engine Torque " << EngineLoad << std::endl;
   }
   void apply_efforts()
@@ -200,14 +199,12 @@ public:
   }
   void wheel_controller(physics::JointPtr wheelJoint, double Torque2)
   {
-   
-
     double wheelOmega = wheelJoint->GetVelocity(0);
     // if (abs(wheelOmega > 1))
     //   jointforce = WheelPower - damping * wheelOmega - friction * wheelOmega / fabs(wheelOmega);
     // else
     //   jointforce = WheelPower - damping * wheelOmega;
-    WheelPower = power*(Torque2/WheelRadius-wheelOmega);
+    WheelPower = power*(Torque2-Speed);
     wheelJoint->SetForce(0, WheelPower);
     if (wheelJoint == right_wheel_2)
     {
